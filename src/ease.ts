@@ -4,6 +4,8 @@
  * @author Keaton Conrad
  ************************************************/
 
+import { PI2, HALFPI } from './constants';
+
 const linear = (percent: number, amplitude: number) => amplitude * percent;
 
 const sinein = (percent: number, amplitude: number) => amplitude * (Math.sin(percent * Math.PI - HALFPI) + 1) * 0.5;

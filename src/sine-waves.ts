@@ -1,15 +1,17 @@
-import * as Utilities from './utilities';
+import { degreesToRadians } from './utilities';
 import * as Waves from './waves';
+import * as Ease from './ease';
 
 type WaveOptions = {
   timeModifier?: number;
-  amplitude?: number;
+  amplitude: number;
   wavelength?: number;
   segmentLength?: number;
   lineWidth?: number;
-  strokeStyle?: string;
+  strokeStyle?: string | CanvasGradient | CanvasPattern;
   type?: string;
-  waveFn?: Function;
+  waveFn?: (x: number) => number;
+  direction?: 'left' | 'right';
 };
 
 interface SineWavesOptions {
@@ -17,7 +19,7 @@ interface SineWavesOptions {
   rotate?: number;
   ease?: string;
   wavesWidth?: string;
-  el?: HTMLCanvasElement;
+  el: HTMLCanvasElement | null;
   waves?: WaveOptions[];
   resizeEvent?: Function;
   initialize?: Function;
@@ -27,21 +29,21 @@ interface SineWavesOptions {
 }
 
 class SineWaves {
-  private options: SineWavesOptions;
-  private el: HTMLCanvasElement;
-  private ctx: CanvasRenderingContext2D;
+  public options: SineWavesOptions;
+  public el: HTMLCanvasElement;
+  public ctx: CanvasRenderingContext2D;
   private waves: WaveOptions[];
   private dpr: number;
-  private waveWidth: number;
-  private waveLeft: number;
-  private yAxis: number;
-  private width: number;
-  private height: number;
+  public waveWidth: number = 0;
+  private waveLeft: number = 0;
+  private yAxis: number = 0;
+  private width: number = 0;
+  private height: number = 0;
   private time: number = 0;
   private running: boolean = true;
   private rotation: number;
   private easeFn: (percent: number, amplitude: number) => number;
-  private phase: number = 0;
+  public phase: number = 0;
 
 
   static defaultWave: WaveOptions = {
@@ -55,17 +57,18 @@ class SineWaves {
   };
 
   constructor(options: SineWavesOptions) {
-    this.options = Utilities.defaults({
-      speed: 10,
+    this.options = {...{
+      speed: 5,
       rotate: 0,
       ease: 'Linear',
       wavesWidth: '95%'
-    }, options);
+    }, ...options};
+    this.time = 0;
 
     this.el = this.options.el!;
-    delete this.options.el;
+
     if (!this.el) {
-      throw 'No Canvas Selected';
+      throw new Error('No Canvas Selected');
     }
 
     this.ctx = this.el.getContext('2d')!;
@@ -73,7 +76,7 @@ class SineWaves {
     this.waves = this.options.waves!;
     delete this.options.waves;
     if (!this.waves || !this.waves.length) {
-      throw 'No waves specified';
+      throw new Error('No waves specified');
     }
 
     this.dpr = window.devicePixelRatio || 1;
@@ -83,13 +86,11 @@ class SineWaves {
 
     this.setupUserFunctions();
 
-    this.easeFn = Utilities.getFn(Waves, this.options.ease!, 'linear');
+    this.easeFn = Ease[this.options.ease?.toLowerCase() as keyof typeof Ease] || Ease.sineinout;
 
-    this.rotation = Utilities.degreesToRadians(this.options.rotate);
+    this.rotation = degreesToRadians(this.options.rotate as number);
 
-    if (typeof this.options.running === 'boolean') {
-      this.running = this.options.running;
-    }
+    this.running = Boolean(this.options.running);
 
     this.setupWaveFns();
 
@@ -97,14 +98,12 @@ class SineWaves {
   }
 
   private setupWaveFns() {
-    let index = -1;
-    const length = this.waves.length;
-    while (++index < length) {
-      this.waves[index].waveFn = Utilities.getFn(Waves, this.waves[index].type!, 'sine');
+    for (let wave of this.waves) {
+      wave.waveFn = Waves[wave.type?.toLowerCase() as keyof typeof Waves] || Waves.sine;
     }
   }
 
-  private setupUserFunctions() {
+  public setupUserFunctions() {
     if (typeof this.options.resizeEvent === 'function') {
       this.options.resizeEvent.call(this);
       window.addEventListener('resize', this.options.resizeEvent.bind(this));
@@ -148,15 +147,7 @@ class SineWaves {
   }
 
   private update() {
-    this.phase += this.options.speed!;
-    let time = this.time - 0.007;
-
-    if (typeof time === 'undefined') {
-      time = this.time;
-    }
-
-    let index = -1;
-    const length = this.waves.length;
+    this.phase -= this.options.speed! / 20;
 
     this.clear();
 
@@ -168,18 +159,21 @@ class SineWaves {
       this.ctx.translate(-this.width / 2, -this.height / 2);
     }
 
-    while (++index < length) {
-      const timeModifier = this.waves[index].timeModifier || 1;
-      this.drawWave(time * timeModifier, this.waves[index]);
+    for (let wave of this.waves) {
+      const timeModifier = wave.timeModifier || 1;
+      this.drawWave(this.phase * timeModifier, wave);
     }
     this.ctx.restore();
   }
 
   private getPoint(time: number, position: number, options: WaveOptions) {
-    const x = (this.phase + time) + (-this.yAxis + position) / options.wavelength!;
-    const y = (options.waveFn as Function).call(this, x, Waves);
+    let x = (this.phase + time) + (-this.yAxis + position) / options.wavelength!;
+    if (options.direction === 'left') {
+      x = (this.phase + time) - (-this.yAxis + position) / options.wavelength!
+    }
+    const y = options.waveFn?.call(this, x) || 0;
   
-    const amplitude = this.easeFn.call(this, position / this.waveWidth, options.amplitude);
+    const amplitude = this.easeFn?.call(this, position / this.waveWidth, options.amplitude);
   
     return {
       x: position + this.waveLeft,
@@ -189,10 +183,10 @@ class SineWaves {
   
 
   private drawWave(time: number, options: WaveOptions) {
-    options = Utilities.defaults(SineWaves.defaultWave, options);
+    options = {...this.options, ...SineWaves.defaultWave, ...options};
 
-    this.ctx.lineWidth = options.lineWidth! * this.dpr;
-    this.ctx.strokeStyle = options.strokeStyle!;
+    this.ctx.lineWidth = options.lineWidth! * this.dpr || 1;
+    this.ctx.strokeStyle = options.strokeStyle! || 'rgba(255, 255, 255, 0.2)';
     this.ctx.lineCap = 'butt';
     this.ctx.lineJoin = 'round';
     this.ctx.beginPath();
@@ -214,6 +208,15 @@ class SineWaves {
       this.update();
     }
     window.requestAnimationFrame(this.loop.bind(this));
+  }
+
+  public setWavesWidth(wavesWidth: string) {
+    this.waveWidth = getWaveWidth(wavesWidth, this.width);
+    this.waveLeft = (this.width - this.waveWidth) / 2;
+  }
+
+  public setSpeed(speed: number) {
+    this.options.speed = speed;
   }
 }
 

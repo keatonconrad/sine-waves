@@ -18,3 +18,5 @@ var PI2 = Math.PI * 2;
  * Half of PI
  */
 var HALFPI = Math.PI / 2;
+
+export { PI180, PI2, HALFPI };
