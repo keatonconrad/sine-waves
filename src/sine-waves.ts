@@ -41,6 +41,8 @@ class SineWaves {
   private running: boolean = true;
   private rotation: number;
   private easeFn: (percent: number, amplitude: number) => number;
+  private phase: number = 0;
+
 
   static defaultWave: WaveOptions = {
     timeModifier: 1,
@@ -145,8 +147,10 @@ class SineWaves {
     this.ctx.clearRect(0, 0, this.width, this.height);
   }
 
-  private update(time?: number) {
-    this.time = this.time - 0.007;
+  private update() {
+    this.phase += this.options.speed!;
+    let time = this.time - 0.007;
+
     if (typeof time === 'undefined') {
       time = this.time;
     }
@@ -172,16 +176,17 @@ class SineWaves {
   }
 
   private getPoint(time: number, position: number, options: WaveOptions) {
-    const x = (time * this.options.speed!) + (-this.yAxis + position) / options.wavelength!;
+    const x = (this.phase + time) + (-this.yAxis + position) / options.wavelength!;
     const y = (options.waveFn as Function).call(this, x, Waves);
-
+  
     const amplitude = this.easeFn.call(this, position / this.waveWidth, options.amplitude);
-
+  
     return {
       x: position + this.waveLeft,
       y: amplitude * y + this.yAxis
     };
   }
+  
 
   private drawWave(time: number, options: WaveOptions) {
     options = Utilities.defaults(SineWaves.defaultWave, options);
