@@ -7,8 +7,8 @@
     "type": "git",
     "url": "git+https://github.com/keatonconrad/sine-waves.git"
   },
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/sine-waves.js",
+  "types": "dist/sine-waves.d.ts",
   "scripts": {
     "test": "jest",
     "build": "tsc"
