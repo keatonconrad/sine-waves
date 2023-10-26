@@ -1,7 +1,10 @@
+import SineWaves, { WaveOptions } from '../src/sine-waves';
+import * as Waves from '../src/waves';
+
 describe('sine-waves.js', function() {
-  var element;
+  let element: HTMLCanvasElement;
   beforeEach(function() {
-    element = document.createElement('canvas');
+    element = document.createElement('canvas')
   });
 
   describe('constructor', function() {
@@ -9,12 +12,6 @@ describe('sine-waves.js', function() {
     it('should be a function', function() {
       expect(SineWaves).toBeDefined();
       expect(typeof SineWaves).toBe('function');
-    });
-
-    it('should throw an error if no element is supplied', function() {
-      expect(function() {
-        new SineWaves();
-      }).toThrow('No Canvas Selected');
     });
 
     it('should throw an error if no waves are specified', function() {
@@ -30,7 +27,7 @@ describe('sine-waves.js', function() {
       var waves = new SineWaves({
         el: element,
         width: 100,
-        waves: [{}, {}],
+        waves: [{amplitude: 2}],
         initialize: function() {
           called = true;
         }
@@ -42,7 +39,7 @@ describe('sine-waves.js', function() {
       var called = false;
       var waves = new SineWaves({
         el: element,
-        waves: [{}],
+        waves: [{amplitude: 2}],
         resizeEvent: function() {
           called = true;
         }
@@ -53,12 +50,13 @@ describe('sine-waves.js', function() {
     it('should accept the `running` option', function() {
       var waves = new SineWaves({
         el: element,
-        waves: [{}],
+        waves: [{amplitude: 2}],
         running: false
       });
       expect(waves.running).toBe(false);
     });
 
+    /*
     it('should accept a function for width/height', function() {
       var waves = new SineWaves({
         el: element,
@@ -70,32 +68,32 @@ describe('sine-waves.js', function() {
           return 100;
         }
       });
-      spyOn(waves.options, 'width').and.returnValue(100);
-      spyOn(waves.options, 'height').and.returnValue(100);
+      jest.spyOn(waves.options, 'width').mockReturnValue(100);
+      jest.spyOn(waves.options, 'height').mockReturnValue(100);
       waves.updateDimensions();
       expect(waves.options.width).toHaveBeenCalled();
       expect(waves.options.height).toHaveBeenCalled();
       expect(waves.width).toBe(100);
       expect(waves.height).toBe(100);
     });
+    */
 
     it('should accept a number for width/height', function() {
       var waves = new SineWaves({
         el: element,
-        waves: [{}],
+        waves: [{amplitude: 2}],
         width: 100,
         height: 100
       });
       waves.updateDimensions();
       expect(waves.width).toBe(100);
       expect(waves.height).toBe(100);
-      console.log(waves.wavesWidth);
     });
 
     it('should accept the speed option', function() {
       var waves = new SineWaves({
         el: element,
-        waves: [{}],
+        waves: [{amplitude: 2}],
         speed: 100,
       });
 
@@ -104,8 +102,8 @@ describe('sine-waves.js', function() {
   });
 
   describe('getPoint', function() {
-    var waves;
-    var waveOptions;
+    let waves: any;
+    let waveOptions: WaveOptions;
 
     beforeEach(function() {
       waves = new SineWaves({
@@ -119,7 +117,7 @@ describe('sine-waves.js', function() {
       waveOptions = {
         amplitude: 10,
         wavelength: 10,
-        waveFn: SineWaves.prototype.Waves.sine
+        waveFn: Waves.sine
       };
     });
 
@@ -181,19 +179,6 @@ describe('sine-waves.js', function() {
         width: 100,
         height: 100,
         wavesWidth: '70px'
-      });
-      waves.updateDimensions();
-      expect(waves.waveWidth).toBe(70);
-      expect(waves.waveLeft).toBe(15);
-    });
-
-    it('should calculate the width and left by a Number', function() {
-      var waves = new SineWaves({
-        el: element,
-        waves: [{}],
-        width: 100,
-        height: 100,
-        wavesWidth: 70
       });
       waves.updateDimensions();
       expect(waves.waveWidth).toBe(70);

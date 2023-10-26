@@ -2,9 +2,9 @@ import { degreesToRadians } from './utilities';
 import * as Waves from './waves';
 import * as Ease from './ease';
 
-type WaveOptions = {
+export type WaveOptions = {
   timeModifier?: number;
-  amplitude: number;
+  amplitude?: number;
   wavelength?: number;
   segmentLength?: number;
   lineWidth?: number;
@@ -32,17 +32,16 @@ class SineWaves {
   public options: SineWavesOptions;
   public el: HTMLCanvasElement;
   public ctx: CanvasRenderingContext2D;
-  private waves: WaveOptions[];
-  private dpr: number;
+  public waves: WaveOptions[];
+  public dpr: number;
   public waveWidth: number = 0;
-  private waveLeft: number = 0;
-  private yAxis: number = 0;
-  private width: number = 0;
-  private height: number = 0;
-  private time: number = 0;
-  private running: boolean = true;
-  private rotation: number;
-  private easeFn: (percent: number, amplitude: number) => number;
+  public waveLeft: number = 0;
+  public yAxis: number = 0;
+  public width: number = 0;
+  public height: number = 0;
+  public running: boolean = true;
+  public rotation: number;
+  public easeFn: (percent: number, amplitude: number) => number;
   public phase: number = 0;
 
 
@@ -63,7 +62,6 @@ class SineWaves {
       ease: 'Linear',
       wavesWidth: '95%'
     }, ...options};
-    this.time = 0;
 
     this.el = this.options.el!;
 
@@ -127,7 +125,7 @@ class SineWaves {
     return 0; // Default value
   }
 
-  private updateDimensions() {
+  public updateDimensions() {
     const width = this.getDimension('width');
     const height = this.getDimension('height');
 
@@ -146,7 +144,7 @@ class SineWaves {
     this.ctx.clearRect(0, 0, this.width, this.height);
   }
 
-  private update() {
+  public update() {
     this.phase -= this.options.speed! / 20;
 
     this.clear();
@@ -173,7 +171,7 @@ class SineWaves {
     }
     const y = options.waveFn?.call(this, x) || 0;
   
-    const amplitude = this.easeFn?.call(this, position / this.waveWidth, options.amplitude);
+    const amplitude = this.easeFn?.call(this, position / this.waveWidth, options.amplitude || 0);
   
     return {
       x: position + this.waveLeft,
